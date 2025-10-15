@@ -7,15 +7,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import util.SeleniumFetcher;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 public class AvitoParser {
 
