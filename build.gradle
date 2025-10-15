@@ -5,6 +5,14 @@ plugins {
 group = 'com.yourname'
 version = '1.0.0'
 
+jar {
+    archiveBaseName = 'flat-watcher'
+    archiveVersion = '1.0.0'
+    manifest {
+        attributes 'Main-Class': 'main.Main'
+    }
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
