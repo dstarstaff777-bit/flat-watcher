@@ -1,20 +1,13 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk
 LABEL authors="Валерий"
-
-RUN apt-get update && apt-get install -y wget unzip && \
-    wget https://services.gradle.org/distributions/gradle-8.7-bin.zip -P /tmp && \
-    unzip -d /opt/gradle /tmp/gradle-8.7-bin.zip && \
-    ln -s /opt/gradle/gradle-8.7/bin/gradle /usr/bin/gradle && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
-
-ENV GRADLE_HOME=/opt/gradle-8.7
-ENV PATH=$PATH:$GRADLE_HOME/bin
 
 WORKDIR /app
 
 COPY . .
 
-RUN gradle clean build -x test
+RUN chmod +x ./gradlew
+
+RUN ./gradlew clean build -x test --no-daemon
 
 CMD ["java", "-jar", "build/libs/flat-watcher.jar"]
 
