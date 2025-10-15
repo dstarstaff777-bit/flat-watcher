@@ -7,7 +7,7 @@ COPY . .
 
 RUN chmod +x ./gradlew
 
-RUN ./gradlew clean build -x test --no-daemon
+RUN ./gradlew clean build -x test --no-daemon --stacktrace --info
 
 CMD ["java", "-jar", "build/libs/flat-watcher.jar"]
 
