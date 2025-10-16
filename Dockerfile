@@ -15,5 +15,5 @@ RUN ls -la build/
 RUN ls -la build/libs/
 
 
-CMD ["java", "-jar", "build/libs/flat-watcher.jar"]
+CMD ["java", "-jar", "build/libs/flat-watcher-1.0.0.jar"]
 
