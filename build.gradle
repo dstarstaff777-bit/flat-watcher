@@ -3,6 +3,15 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
+jar {
+    archiveBaseName = 'flat-watcher'
+    archiveVersion = '1.0.0'
+    manifest {
+        attributes 'Main-Class': 'main.Main'
+    }
+    enabled = true
+}
+
 group = 'com.yourname'
 version = '1.0.0'
 
