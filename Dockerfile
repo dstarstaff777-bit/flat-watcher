@@ -7,13 +7,11 @@ COPY . .
 
 RUN chmod +x ./gradlew
 
-RUN ./gradlew clean build -x test --no-daemon
-RUN pwd
-RUN ls -la
-RUN find . -name "*.jar"
-RUN ls -la build/
+RUN ./gradlew shadowJar --no-daemon
+
 RUN ls -la build/libs/
+RUN find . -name "*jar"
 
 
-CMD ["java", "-jar", "build/libs/flat-watcher-1.0.0.jar"]
+CMD ["java", "-jar", "build/libs/flat-watcher-1.0.0-all.jar"]
 
