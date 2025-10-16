@@ -1,20 +1,12 @@
 plugins {
     id 'java'
-    id 'application'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.yourname'
 version = '1.0.0'
-mainClassName = 'main.Main'
 
-jar {
-    archiveBaseName = 'flat-watcher'
-    archiveVersion = '1.0.0'
-    manifest {
-        attributes 'Main-Class': 'main.Main'
-    }
-}
+
 
 java {
     toolchain {
