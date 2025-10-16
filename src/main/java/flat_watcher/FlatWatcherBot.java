@@ -1,4 +1,4 @@
-package com.flat_watcher;
+package flat_watcher;
 
 import model.FlatListing;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;

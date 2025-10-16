@@ -1,6 +1,6 @@
 package main;
 
-import com.flat_watcher.FlatWatcherBot;
+import flat_watcher.FlatWatcherBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
