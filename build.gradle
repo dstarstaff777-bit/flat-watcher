@@ -6,13 +6,13 @@ plugins {
 
 group = 'com.yourname'
 version = '1.0.0'
-mainClassName = 'flat_watcher.main.Main'
+mainClassName = 'main.Main'
 
 jar {
     archiveBaseName = 'flat-watcher'
     archiveVersion = '1.0.0'
     manifest {
-        attributes 'Main-Class': 'flat_watcher.main.Main'
+        attributes 'Main-Class': 'main.Main'
     }
 }
 
