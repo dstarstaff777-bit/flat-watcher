@@ -10,10 +10,12 @@ public class SeleniumFetcher {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
 
-        options.addArguments("--headless=new");
+        options.addArguments("--headless");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
-        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--disable-gpu");
+
 
         WebDriver driver = new ChromeDriver(options);
         try {
