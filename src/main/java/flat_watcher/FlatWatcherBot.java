@@ -14,12 +14,20 @@ import java.util.List;
 public class FlatWatcherBot extends TelegramLongPollingBot {
 
     private final AvitoParser parser;
-    private final String botToken = System.getenv("BOT_TOKEN");
-    private final long ownerChatId = Config.getLongProperty("CHAT_ID");
+    private final long ownerChatId;
 
 
 
     public FlatWatcherBot() {
+        String chatIdStr = Config.getProperty("CHAT_ID");
+        if(chatIdStr == null || chatIdStr.isBlank()) {
+            throw new IllegalArgumentException("CHAT_ID property is not set");
+        }
+        try {
+            this.ownerChatId = Long.parseLong(chatIdStr.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("CHAT_ID property is not a valid long value");
+        }
         this.parser = new AvitoParser();
     }
 
