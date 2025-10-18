@@ -14,7 +14,8 @@ import java.util.List;
 public class FlatWatcherBot extends TelegramLongPollingBot {
 
     private final AvitoParser parser;
-    private final long ownerChatId = Long.parseLong(System.getenv("OWNER_CHAT_ID"));
+    private final String botToken = System.getenv("BOT_TOKEN");
+    private final long ownerChatId = Long.parseLong(System.getenv("CHAT_ID"));
 
     public FlatWatcherBot() {
         this.parser = new AvitoParser();
@@ -22,6 +23,8 @@ public class FlatWatcherBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        System.out.println("BOT_TOKEN = " + System.getenv("BOT_TOKEN"));
+        System.out.println("CHAT_ID = " + System.getenv("CHAT_ID"));
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
