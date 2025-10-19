@@ -17,5 +17,5 @@ RUN apt-get update && apt-get install -y wget unzip chromium && \
 
 ENV PORT 8080
 
-CMD ["java", "-jar", "build/libs/flat-watcher-1.0.0-all.jar"]
+CMD ["sh","-c","echo '=== Starting Application ==='; java", "-jar", "build/libs/flat-watcher-1.0.0-all.jar"]
 
