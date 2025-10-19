@@ -19,7 +19,7 @@ public class FlatWatcherBot extends TelegramLongPollingBot {
 
 
     public FlatWatcherBot() {
-        String chatIdStr = Config.getProperty("CHAT_ID");
+        String chatIdStr = Config.getProperty("telegram.chat.id");
         if(chatIdStr == null || chatIdStr.isBlank()) {
             throw new IllegalArgumentException("CHAT_ID property is not set");
         }
