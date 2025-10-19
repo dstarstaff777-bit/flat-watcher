@@ -44,7 +44,18 @@ public class AvitoParser {
                 String title = ad.select("h3[itemprop=name]").text();
                 String urlPath = ad.select("a[itemprop=url]").attr("href");
                 String fullUrl = "https://www.avito.ru" + urlPath;
-                int price = Integer.parseInt(ad.select("span[itemprop=price]").attr("content"));
+                String priceText = ad.select("span[itemprop=price]").attr("content").trim();
+                int price = 0;
+                if(priceText != null && !priceText.isEmpty()) {
+                    try {
+                        price = Integer.parseInt(priceText);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Ошибка парсинга цены: " + priceText);
+                        price = 0;
+                    }
+                } else {
+                    System.err.println("Цена отсутствует для обьявления: " + fullUrl);
+                }
 
                 String district = ad.select("div[data-marker=item-address]").text();
 
