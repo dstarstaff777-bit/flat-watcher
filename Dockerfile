@@ -13,7 +13,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew shadowJar --no-daemon
 
 
-ENV PORT 8080
+EXPOSE 8080
 
 CMD ["java", "-jar", "build/libs/flat-watcher-1.0.0-all.jar"]
 
