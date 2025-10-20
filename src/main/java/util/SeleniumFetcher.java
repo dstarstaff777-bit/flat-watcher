@@ -23,16 +23,27 @@ public class SeleniumFetcher {
         options.addArguments("--disable-gpu");
 
 
-        WebDriver driver = new ChromeDriver(options);
+        WebDriver driver = null;
         try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-                   wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("span[itemprop=price]")));
+            driver = new ChromeDriver(options);
+            driver.get(url);
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(25));
+            wait.until(ExpectedConditions.or(
+                    ExpectedConditions.presenceOfElementLocated(By.cssSelector("span[itemprop='price']")),
+                    ExpectedConditions.presenceOfElementLocated(By.cssSelector("div[data-marker='item']"))
+            ));
+            Thread.sleep(1000);
+            return driver.getPageSource();
         } catch (TimeoutException e) {
             System.out.println("Не удалось дождаться загрузки цены для " + url);
+            return "";
+        } catch (Exception e) {
+            System.out.println("Ошибка Selenium: " + e.getMessage());
+            return "";
+        } finally {
+            if (driver != null) {
+                driver.quit();
+            }
         }
-        String html = driver.getPageSource();
-        driver.quit();
-        return html;
-
     }
 }
