@@ -34,6 +34,6 @@ public class SeleniumFetcher {
         String html = driver.getPageSource();
         driver.quit();
         return html;
-        }
+
     }
 }
