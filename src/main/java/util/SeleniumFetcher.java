@@ -26,8 +26,7 @@ public class SeleniumFetcher {
         WebDriver driver = new ChromeDriver(options);
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            wait.until(ExpectedConditions.presenceOfElementLocated(
-                    By.cssSelector("span[class*=price]")));
+                   wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("span[itemprop=price]")));
         } catch (TimeoutException e) {
             System.out.println("Не удалось дождаться загрузки цены для " + url);
         }

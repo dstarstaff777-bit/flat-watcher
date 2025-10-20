@@ -17,11 +17,12 @@ public class Main {
 
     public static void startHealthServer() {
         try {
-            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0",8080), 0);
             server.createContext("/", exchange -> {
                 String response = "Bot is running!";
-                exchange.sendResponseHeaders(100, response.getBytes().length);
-                exchange.getResponseBody().write(response.getBytes());
+                byte[] bytes = response.getBytes();
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
                 exchange.close();
             });
             server.start();
