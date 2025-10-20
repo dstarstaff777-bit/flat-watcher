@@ -1,22 +1,38 @@
 package main;
 
-import com.github.dockerjava.api.model.HealthCheck;
+import com.sun.net.httpserver.HttpServer;
+import java.net.InetSocketAddress;
+
 import flat_watcher.FlatWatcherBot;
-import org.apache.http.impl.bootstrap.HttpServer;
-import org.openqa.selenium.remote.http.HttpHandler;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-
-import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
 public class Main {
+
+    public static void startHealthServer() {
+        try {
+            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+            server.createContext("/", exchange -> {
+                String response = "Bot is running!";
+                exchange.sendResponseHeaders(100, response.getBytes().length);
+                exchange.getResponseBody().write(response.getBytes());
+                exchange.close();
+            });
+            server.start();
+            System.out.println("Health server started on port 8080");
+        } catch (Exception e) {
+            System.out.println("Error starting health server");
+        }
+    }
     public static void main(String[] args) {
+
+        startHealthServer();
 
         System.out.println("Начинаем парсить");
         try {
