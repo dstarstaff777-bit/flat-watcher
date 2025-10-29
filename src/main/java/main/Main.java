@@ -18,10 +18,11 @@ public class Main {
             startHealthServer();
 
             String baseUrl = System.getenv("RENDER_EXTERNAL_URL");
-            if (baseUrl == null) {
-                baseUrl = "http://localhost:8080"; // для локального теста
+            if (baseUrl == null || baseUrl.isEmpty()) {
+                baseUrl = "flat-watcher.onrender.com";
             }
             String webhookUrl = baseUrl + "/webhook";
+            System.out.println("Webhook URL: " + webhookUrl );
 
             FlatWatcherBot bot = new FlatWatcherBot();
             DefaultWebhook defaultWebhook = new DefaultWebhook();
