@@ -2,41 +2,47 @@ package notifer;
 
 import model.UserSearchCriteria;
 
+import org.telegram.telegrambots.bots.DefaultAbsSender;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import util.Config;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
-import java.net.URI;
 
-public class TelegramNotifier {
+public class TelegramNotifier extends DefaultAbsSender {
     private static final String BOT_TOKEN = Config.getProperty("telegram.bot.token");
     private static final String CHAT_ID = Config.getProperty("telegram.chat.id");
 
-    private static final HttpClient client = HttpClient.newHttpClient();
+    public TelegramNotifier() {
+        super(new DefaultBotOptions());
+    }
+    @Override
+    public String getBotToken() {
+        return BOT_TOKEN;
+    }
+    /**
+     * Отправляет простое текстовое сообщение в Telegram.
+     *
+     * @param text текст сообщения
+     */
+    public void sendMessage(String text) {
+        if (CHAT_ID == null || BOT_TOKEN == null) {
+            System.err.println("Ошибка: CHAT_ID или BOT_TOKEN не заданы!");
+            return;
+        }
 
+        SendMessage message = new SendMessage();
+        message.setChatId(CHAT_ID);
+        message.setText(text);
 
-    public static void send(long chatId, String text, String botToken) {
         try {
-            String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
-            String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8.toString());
-            String body = "chat_id=" + chatId + "&text=" + encode(text);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
+            execute(message);
+            System.out.println("Сообщение отправлено: " + text);
+        } catch (TelegramApiException e) {
+            System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
-    private static String encode(String text) {
-        return text.replace("&", "%26").replace("\n", "%0A").replace(" ", "%20");
-    }
 }
+
+

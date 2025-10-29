@@ -1,45 +1,60 @@
 package main;
 
-import com.sun.net.httpserver.HttpServer;
-import java.net.InetSocketAddress;
 
 import flat_watcher.FlatWatcherBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
+import org.telegram.telegrambots.updatesreceivers.DefaultWebhook;
 
 
 public class Main {
 
-    public static void startHealthServer() {
-        try {
-            HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0",8080), 0);
-            server.createContext("/", exchange -> {
-                String response = "Bot is running!";
-                byte[] bytes = response.getBytes();
-                exchange.sendResponseHeaders(200, bytes.length);
-                exchange.getResponseBody().write(bytes);
-                exchange.close();
-            });
-            server.start();
-            System.out.println("Health server started on port 8080");
-        } catch (Exception e) {
-            System.out.println("Error starting health server");
-        }
-    }
     public static void main(String[] args) {
 
-        startHealthServer();
-
-        System.out.println("Начинаем парсить");
         try {
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            FlatWatcherBot bot = new FlatWatcherBot();
-            botsApi.registerBot(bot);
-            System.out.println("Бот запущен");
+            // Запускаем health server (чтобы Render не засыпал)
+            startHealthServer();
 
-        } catch (TelegramApiException e) {
+            String baseUrl = System.getenv("RENDER_EXTERNAL_URL");
+            if (baseUrl == null) {
+                baseUrl = "http://localhost:8080"; // для локального теста
+            }
+            String webhookUrl = baseUrl + "/webhook";
+
+            FlatWatcherBot bot = new FlatWatcherBot();
+            DefaultWebhook defaultWebhook = new DefaultWebhook();
+            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class, defaultWebhook);
+
+            SetWebhook setWebhook = SetWebhook.builder()
+                    .url(webhookUrl)
+                    .build();
+
+            botsApi.registerBot(bot, setWebhook);
+            System.out.println("Webhook установлен: " + webhookUrl);
+        } catch (
+                TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    // простой healthcheck сервер (Render требует открытый порт)
+    private static void startHealthServer() {
+        try {
+            com.sun.net.httpserver.HttpServer server =
+                    com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(8080), 0);
+            server.createContext("/", exchange -> {
+                String resp = "OK";
+                exchange.sendResponseHeaders(200, resp.getBytes().length);
+                try (java.io.OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp.getBytes());
+                }
+            });
+            server.start();
+            System.out.println("Health сервер запущен на порту 8080");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
