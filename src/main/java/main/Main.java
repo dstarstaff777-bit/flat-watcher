@@ -3,6 +3,7 @@ package main;
 
 import com.sun.net.httpserver.HttpServer;
 import flat_watcher.FlatWatcherBot;
+import notifer.TelegramNotifier;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
@@ -15,6 +16,8 @@ import java.net.InetSocketAddress;
 public class Main {
 
     public static void main(String[] args) {
+        TelegramNotifier telegramNotifier = new TelegramNotifier();
+        telegramNotifier.sendMessage("Бот запущен!");
 
         try {
             // 1️ Запускаем health server (Render требует открытый порт)

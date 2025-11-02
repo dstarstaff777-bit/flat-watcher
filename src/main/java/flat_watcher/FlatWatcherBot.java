@@ -90,7 +90,7 @@ public class FlatWatcherBot extends TelegramWebhookBot {
 
     @Override
     public String getBotToken() {
-        return System.getenv("TELEGRAM_BOT_TOKEN");
+        return System.getenv("BOT_TOKEN");
     }
 
     @Override
