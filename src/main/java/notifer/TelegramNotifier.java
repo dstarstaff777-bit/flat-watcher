@@ -15,31 +15,34 @@ public class TelegramNotifier extends DefaultAbsSender {
 
     public TelegramNotifier() {
         super(new DefaultBotOptions());
+
+        // Получаем данные из системных переменных Render
+
+        if (BOT_TOKEN == null || CHAT_ID == null) {
+            System.err.println(" Ошибка: TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не заданы!");
+        }
     }
+
     @Override
     public String getBotToken() {
         return BOT_TOKEN;
     }
+
     /**
      * Отправляет простое текстовое сообщение в Telegram.
-     *
-     * @param text текст сообщения
      */
     public void sendMessage(String text) {
-        if (CHAT_ID == null || BOT_TOKEN == null) {
-            System.err.println("Ошибка: CHAT_ID или BOT_TOKEN не заданы!");
+        if (BOT_TOKEN == null || CHAT_ID== null) {
+            System.err.println("Не могу отправить сообщение: не заданы TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID");
             return;
         }
 
-        SendMessage message = new SendMessage();
-        message.setChatId(CHAT_ID);
-        message.setText(text);
-
         try {
+            SendMessage message = new SendMessage(CHAT_ID, text);
             execute(message);
             System.out.println("Сообщение отправлено: " + text);
         } catch (TelegramApiException e) {
-            System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
+            System.err.println("Ошибка отправки в Telegram: " + e.getMessage());
             e.printStackTrace();
         }
     }
