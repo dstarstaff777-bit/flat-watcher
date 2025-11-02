@@ -4,103 +4,103 @@ import model.FlatListing;
 import notifer.TelegramNotifier;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import parser.AvitoParser;
-import util.Config;
+
+import java.time.Duration;
 import java.util.List;
 
 public class FlatWatcherBot extends TelegramWebhookBot {
 
+    private final String webhookUrl;
     private final TelegramNotifier notifier;
     private final AvitoParser parser;
 
-    public FlatWatcherBot() {
+    public FlatWatcherBot(String webhookUrl) {
+        this.webhookUrl = webhookUrl;
         this.notifier = new TelegramNotifier();
         this.parser = new AvitoParser();
     }
 
-    @Override
-    public String getBotUsername() {
-        return "FlatWatcherBot"; // Имя твоего бота
-    }
-
-    @Override
-    public String getBotToken() {
-        return Config.getProperty("telegram.bot.token"); // Берётся из config.properties или переменных окружения
-    }
-
-    @Override
-    public String getBotPath() {
-        return "/webhook"; // Путь, по которому Telegram будет присылать обновления
-    }
-
+    //  Обработка сообщений, пришедших от Telegram
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        if (update == null || !update.hasMessage() || !update.getMessage().hasText()) {
-            return null;
-        }
+        try {
+            if (update.hasMessage() && update.getMessage().hasText()) {
+                String message = update.getMessage().getText().trim();
 
-        String message = update.getMessage().getText().trim();
-        long chatId = update.getMessage().getChatId();
-
-        switch (message) {
-            case "/start":
-                notifier.sendMessage("👋 Привет! Я помогу тебе отслеживать новые квартиры на Avito.\n" +
-                        "Используй команду /find чтобы запустить поиск.");
-                break;
-
-            case "/find":
-                notifier.sendMessage("🔎 Проверяю новые объявления...");
-                try {
-                    checkNewFlats(chatId);
-                } catch (Exception e) {
-                    notifier.sendMessage("❌ Ошибка при проверке объявлений: " + e.getMessage());
-                    e.printStackTrace();
+                if (message.equalsIgnoreCase("/start")) {
+                    return new SendMessage(update.getMessage().getChatId().toString(),
+                            "👋 Привет! Я слежу за новыми объявлениями на Avito.\n" +
+                                    "Используй команду /find, чтобы проверить свежие объявления.");
                 }
-                break;
 
-            default:
-                notifier.sendMessage("⚠️ Неизвестная команда. Попробуй /find.");
+                if (message.equalsIgnoreCase("/find")) {
+                    notifier.sendMessage("🔍 Проверяю новые объявления...");
+                    checkNewFlats(update.getMessage().getChatId().toString());
+                    return null;
+                }
+
+                return new SendMessage(update.getMessage().getChatId().toString(),
+                        "Неизвестная команда. Используй /find для проверки новых объявлений.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
         return null;
     }
 
-    /**
-     * Проверяет наличие новых объявлений и отправляет результат пользователю.
-     */
-    public void checkNewFlats(long chatId) {
+    //  Проверка новых объявлений
+    public void checkNewFlats(String chatId) {
         try {
-
             List<FlatListing> listings = parser.fetchListings(
-                    "https://www.avito.ru/uzlovaya/kvartiry/prodam",
-                    java.time.Duration.ofHours(1)
+                    System.getenv("AVITO_URL"),
+                    Duration.ofMinutes(60)
             );
 
             if (listings.isEmpty()) {
-                notifier.sendMessage("😕 За последний час новых объявлений не найдено.");
-            } else {
-                notifier.sendMessage("✨ Найдены новые объявления:");
-
-                for (FlatListing flat : listings) {
-                    String msg = String.format(
-                            "🏠 %s\n💰 %d ₽\n📍 %s\n🕒 %s\n🔗 %s",
-                            flat.getTitle(),
-                            flat.getPrice(),
-                            flat.getDistrict(),
-                            flat.getPublishedAt(),
-                            flat.getUrl()
-                    );
-                    notifier.sendMessage(msg);
-                }
+                notifier.sendMessage("🕐 За последние 60 минут новых объявлений не найдено.");
+                return;
             }
+
+            for (FlatListing flat : listings) {
+                String msg = String.format(
+                        "🏠 %s\n💰 Цена: %d ₽\n📍 Район: %s\n🕓 %s\n🔗 %s",
+                        flat.getTitle(),
+                        flat.getPrice(),
+                        flat.getDistrict(),
+                        flat.getPublishedAt(),
+                        flat.getUrl()
+                );
+                notifier.sendMessage(msg);
+            }
+
         } catch (Exception e) {
-            notifier.sendMessage("⚠️ Ошибка при парсинге: " + e.getMessage());
+            notifier.sendMessage("⚠️ Ошибка при получении объявлений: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    //  Данные для Telegram API
+    @Override
+    public String getBotUsername() {
+        return System.getenv("TELEGRAM_BOT_USERNAME");
+    }
+
+    @Override
+    public String getBotToken() {
+        return System.getenv("TELEGRAM_BOT_TOKEN");
+    }
+
+    @Override
+    public String getBotPath() {
+        return "/webhook";
+    }
+
+    public String getWebhookUrl() {
+        return webhookUrl;
+    }
 }
 
 
