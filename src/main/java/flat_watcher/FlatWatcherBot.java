@@ -26,27 +26,16 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     //  Обработка сообщений, пришедших от Telegram
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        try {
-            if (update.hasMessage() && update.getMessage().hasText()) {
-                String message = update.getMessage().getText().trim();
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            String text = update.getMessage().getText();
+            System.out.println("Пришло сообщение: " + text);
 
-                if (message.equalsIgnoreCase("/start")) {
-                    return new SendMessage(update.getMessage().getChatId().toString(),
-                            "👋 Привет! Я слежу за новыми объявлениями на Avito.\n" +
-                                    "Используй команду /find, чтобы проверить свежие объявления.");
-                }
-
-                if (message.equalsIgnoreCase("/find")) {
-                    notifier.sendMessage("🔍 Проверяю новые объявления...");
-                    checkNewFlats(update.getMessage().getChatId().toString());
-                    return null;
-                }
-
-                return new SendMessage(update.getMessage().getChatId().toString(),
-                        "Неизвестная команда. Используй /find для проверки новых объявлений.");
+            if (text.equals("/find")) {
+                SendMessage reply = new SendMessage();
+                reply.setChatId(update.getMessage().getChatId().toString());
+                reply.setText("🔍 Проверяю новые объявления...");
+                return reply;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return null;
     }
