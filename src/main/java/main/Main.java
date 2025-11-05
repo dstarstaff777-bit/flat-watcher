@@ -6,7 +6,6 @@ import flat_watcher.FlatWatcherBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
