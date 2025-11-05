@@ -3,6 +3,8 @@ package main;
 
 import com.sun.net.httpserver.HttpServer;
 import flat_watcher.FlatWatcherBot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
@@ -11,10 +13,11 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 
-public class Main {
 
+public class Main {
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
     public static void main(String[] args) {
-   //
+        log.info("Запуск бота...");
         try {
             // 1️ Запускаем health server (Render требует открытый порт)
             startHealthServer();
@@ -41,7 +44,7 @@ public class Main {
             System.out.println("✅ Бот успешно запущен и webhook активен!");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Ошибка при запуске бота: ", e);
         }
     }
 
