@@ -31,14 +31,15 @@ public class TelegramNotifier extends DefaultAbsSender {
     /**
      * Отправляет простое текстовое сообщение в Telegram.
      */
-    public void sendMessage(String text) {
-        if (BOT_TOKEN == null || CHAT_ID== null) {
+    public void sendMessage(Long chatId, String text) {
+        if (BOT_TOKEN == null || chatId == null) {
             System.err.println("Не могу отправить сообщение: не заданы TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID");
             return;
         }
+        SendMessage message = new SendMessage(chatId.toString(), text);
+        message.enableHtml(true);
 
         try {
-            SendMessage message = new SendMessage(CHAT_ID, text);
             execute(message);
             System.out.println("Сообщение отправлено: " + text);
         } catch (TelegramApiException e) {

@@ -28,28 +28,30 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
+            Long chatId = update.getMessage().getChatId();
             System.out.println("Пришло сообщение: " + text);
 
-            if (text.equals("/find")) {
-                SendMessage reply = new SendMessage();
-                reply.setChatId(update.getMessage().getChatId().toString());
-                reply.setText("🔍 Проверяю новые объявления...");
-                return reply;
-            }
+            if (text.equalsIgnoreCase("/find")) {
+                checkNewFlats(chatId);
+                return new SendMessage(chatId.toString(), "Проверяю новые объявления за последние 60 минут...");
+            };
+            return new SendMessage(chatId.toString(), "Привет используй команду /find для поиска новых объявлений " );
         }
         return null;
     }
 
     //  Проверка новых объявлений
-    public void checkNewFlats(String chatId) {
+    public void checkNewFlats(Long chatId) {
         try {
-            List<FlatListing> listings = parser.fetchListings(
-                    System.getenv("AVITO_URL"),
-                    Duration.ofMinutes(60)
-            );
+            System.out.println("Начинаем проверку новых обьявлений");
+
+            String searchUrl = "https://avito.ru/uzlovaya/kvartiry/prodam";
+            Duration maxAge = Duration.ofHours(1);
+
+            List <FlatListing> listings = parser.fetchListings(searchUrl, maxAge);
 
             if (listings.isEmpty()) {
-                notifier.sendMessage("🕐 За последние 60 минут новых объявлений не найдено.");
+                notifier.sendMessage(chatId,"🕐 За последние 60 минут новых объявлений не найдено.");
                 return;
             }
 
@@ -62,11 +64,12 @@ public class FlatWatcherBot extends TelegramWebhookBot {
                         flat.getPublishedAt(),
                         flat.getUrl()
                 );
-                notifier.sendMessage(msg);
+                notifier.sendMessage(chatId, msg);
             }
+            System.out.println("Проверка завершена, отправлено " + listings.size() + " обьявлений.");
 
         } catch (Exception e) {
-            notifier.sendMessage("⚠️ Ошибка при получении объявлений: " + e.getMessage());
+            notifier.sendMessage(chatId, "⚠️ Ошибка при получении объявлений: " + e.getMessage());
             e.printStackTrace();
         }
     }
