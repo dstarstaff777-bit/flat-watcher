@@ -67,7 +67,7 @@ public class AvitoParser {
 
                 // дата публикации
                 String dateText = ad.select("time[itemprop='datePublished']").attr("datetime");
-                LocalDateTime publishedAt = null;
+                LocalDateTime publishedAt = parseDate(dateText);
                 if(dateText != null && !dateText.isEmpty()) {
                     try {
                         publishedAt = LocalDateTime.parse(dateText,java.time.format.DateTimeFormatter.ISO_DATE_TIME);
