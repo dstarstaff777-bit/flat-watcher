@@ -16,7 +16,7 @@ import java.net.InetSocketAddress;
 public class Main {
 
     public static void main(String[] args) {
-
+   //
         try {
             // 1️ Запускаем health server (Render требует открытый порт)
             startHealthServer();
