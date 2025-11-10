@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jdk
-
+FROM selenium/standalone-chrome:latest
 
 WORKDIR /app
 
