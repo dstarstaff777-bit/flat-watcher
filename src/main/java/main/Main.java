@@ -49,35 +49,20 @@ public class Main {
     }
 
     //  Мини-сервер для Render (чтобы приложение не «усыплялось»)
-    private static void startHealthServer() {
-        try {
-            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-            server.createContext("/", exchange -> {
-                String response = "Service is running!";
-                exchange.sendResponseHeaders(200, response.getBytes().length);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes());
-                }
+    private static void startHealthServer() throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 
-            });
+        server.createContext("/webhook", exchange -> {
+            String body = new String(exchange.getRequestBody().readAllBytes());
+            System.out.println("Получено обновление от Telegram: " + body);
 
-            //  создаём маршрут /webhook, чтобы Telegram мог достучаться
-            server.createContext("/webhook", exchange -> {
-                if ("POST".equals(exchange.getRequestMethod())) {
-                    System.out.println("📩 Получено обновление от Telegram");
-                }
-                String response = "Webhook received";
-                exchange.sendResponseHeaders(200, response.getBytes().length);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes());
-                }
-            });
+            exchange.sendResponseHeaders(200, 0);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write("OK".getBytes());
+            }
+        });
 
-            server.start();
-            System.out.println("🌍 Health server запущен на порту 8080");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        server.start();
+        System.out.println("🩺 Health server запущен на порту 8080");
     }
 }
