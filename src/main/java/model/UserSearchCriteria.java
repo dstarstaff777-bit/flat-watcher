@@ -1,38 +1,17 @@
 package model;
 
 public class UserSearchCriteria {
-    private Integer minPrice;
-    private Integer maxPrice;
-    private String district;
+    private String baseUrl = "https://www.avito.ru/uzlovaya/kvartiry/prodam";
 
-    public UserSearchCriteria(Integer minPrice, Integer maxPrice, String district) {
-        this.minPrice = minPrice;
-        this.maxPrice = maxPrice;
-        this.district = district.toLowerCase();
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
-    public boolean matches(FlatListing listing) {
-        if(listing == null) return false;
-        boolean priceMatch = true;
-        if(minPrice != null) {
-            priceMatch = listing.getPrice() >= minPrice;
-        }
-        if(maxPrice != null) {
-            priceMatch = priceMatch && (listing.getPrice() <= maxPrice);
-        }
-        boolean districtMatch = true;
-        if (district != null && !district.isEmpty()) {
-            String listingDistrict = listing.getDistrict() != null ?
-                    listing.getDistrict().toLowerCase() : "";
-            districtMatch = listingDistrict.contains(district);
-        }
-        return priceMatch && districtMatch;
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
-    public String toSearchUrl() {
-        return "https://avito.ru/uzlovaya/kvartiry?" +
-                "min=" + minPrice +
-                "max=" + maxPrice +
-                "district=" + district;
+
+    public UserSearchCriteria() {
     }
 }

@@ -19,6 +19,19 @@ public class FlatListing {
         this.rooms = rooms;
         this.publishedAt = publishedAt;
     }
+    public String toTelegramMessage() {
+        // форматируем дату красиво
+        String date = publishedAt != null
+                ? publishedAt.format(DateTimeFormatter.ofPattern("dd.MM в HH:mm"))
+                : "время неизвестно";
+
+        return  "🏠 <b>" + title + "</b>\n" +
+                "💰 Цена: <b>" + price + "</b> ₽\n" +
+                "📍 Район: " + (district != null ? district : "не указан") + "\n" +
+                "🕒 Опубликовано: " + date + "\n" +
+                "🔗 <a href=\"" + url + "\">Открыть объявление</a>";
+    }
+
 
     // --- Геттеры и сеттеры ---
     public String getTitle() {
@@ -53,10 +66,4 @@ public class FlatListing {
         this.publishedAt = publishedAt;
     }
 
-    // --- Форматированная дата для Telegram ---
-    public String getFormattedPublishedAt() {
-        if (publishedAt == null) return "не указано";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-        return publishedAt.format(formatter);
-    }
 }
