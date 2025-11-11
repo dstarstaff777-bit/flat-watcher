@@ -21,7 +21,7 @@ import java.io.OutputStream;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
         try {
             System.out.println("Запуск бота...");
