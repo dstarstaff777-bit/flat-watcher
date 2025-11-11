@@ -9,9 +9,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import parser.AvitoParser;
 import util.Config;
-
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 public class FlatWatcherBot extends TelegramWebhookBot {
