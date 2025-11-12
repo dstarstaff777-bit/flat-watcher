@@ -47,6 +47,14 @@ public class Main {
 
             // Запускаем веб-сервер на Render
             startWebhookServer(bot);
+            System.out.println("Webhook сервер запущен на порту 8080.");
+            synchronized (FlatWatcherBot.class) {
+                try {
+                    FlatWatcherBot.class.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 
             System.out.println("✅ Бот успешно запущен и webhook активен!");
 
