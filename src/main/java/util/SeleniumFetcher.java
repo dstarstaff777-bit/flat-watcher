@@ -10,19 +10,19 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import parser.FetchResult;
-
 import java.time.Duration;
 
 public class SeleniumFetcher {
     public FetchResult fetchPageSource(String url) {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        ;
+
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--disable-gpu");
-        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.addArguments("--disable-geolocation");
 
         WebDriver driver = null;
 
@@ -30,7 +30,7 @@ public class SeleniumFetcher {
             driver = new ChromeDriver(options);
             driver.get(url);
 
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(25));
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
 
             WebElement priceElement = wait.until(
                     ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-marker='item-price']"))
@@ -39,9 +39,7 @@ public class SeleniumFetcher {
             String priceText = priceElement.getText().trim();
             System.out.println("💰 Цена найдена: " + priceText);
 
-            String html = driver.getPageSource();
-
-            return new FetchResult(html, priceText);
+            return new FetchResult(driver.getPageSource(), priceText);
 
         } catch (TimeoutException e) {
             System.out.println("⏳ Не удалось дождаться цены: " + url);

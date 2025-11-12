@@ -60,12 +60,24 @@ public class Main {
 
         server.createContext("/webhook", (HttpExchange exchange) -> {
             if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                // Это не запрос от Telegram, а ping от Render — игнорируем.
+                System.out.println("📡 Получен внешний ping (" + exchange.getRequestMethod() + ") — пропускаем.");
                 exchange.sendResponseHeaders(200, 0);
                 exchange.close();
                 return;
             }
 
-            String json = new String(exchange.getRequestBody().readAllBytes());
+            // Читаем тело запроса
+            String json = new String(exchange.getRequestBody().readAllBytes()).trim();
+
+            // Если тело пустое — тоже игнорируем
+            if (json.isEmpty() || json.equals("{}")) {
+                System.out.println("📡 Пустое тело запроса — игнорируем (возможно Render health-check).");
+                exchange.sendResponseHeaders(200, 0);
+                exchange.close();
+                return;
+            }
+
             System.out.println("📩 Update received: " + json);
 
             try {
@@ -82,8 +94,5 @@ public class Main {
             exchange.sendResponseHeaders(200, 0);
             exchange.close();
         });
-
-        server.start();
-        System.out.println("🌍 HTTP Webhook server running on port 8080");
     }
 }
