@@ -7,85 +7,93 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import util.SeleniumFetcher;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Pattern;
 
 
 public class AvitoParser {
 
+    private final SeleniumFetcher seleniumFetcher;
 
-    private LocalDateTime parseDate(String text) {
-        LocalDateTime now = LocalDateTime.now();
-
-        if (text.startsWith("Сегодня")) {
-            String time = text.replace("Сегодня в ", "").trim();
-            LocalTime localTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
-            return LocalDateTime.of(now.toLocalDate(), localTime);
-        } else if (text.startsWith("Вчера")) {
-            String time = text.replace("Вчера в ", "").trim();
-            LocalTime localTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
-            return LocalDateTime.of(now.toLocalDate().minusDays(1), localTime);
-        }
-        // fallback — если формат другой
-        return now.minusDays(2);
+    public AvitoParser(SeleniumFetcher seleniumFetcher) {
+        this.seleniumFetcher = seleniumFetcher;
     }
 
-    public List<FlatListing> fetchListings(String url, Duration maxAge) {
-        List<FlatListing> listings = new ArrayList<>();
-        String html = SeleniumFetcher.fetchPageSource(url);
-        Document doc = Jsoup.parse(html);
+    public List<FlatListing> fetch(String searchUrl) {
+        List<FlatListing> flats = new ArrayList<>();
 
-        Elements ads = doc.select("div[data-marker=item]");
-        for (Element ad : ads) {
-            try {
-                String title = ad.select("h3[itemprop=name]").text();
-                String urlPath = ad.select("a[itemprop=url]").attr("href");
-                String district = ad.select("div[data-marker=item-address]").text();
-                String fullUrl = "https://www.avito.ru" + urlPath;
-                String priceText = ad.select("span[itemprop=price]").attr("content").trim();
-                int price = 0;
-                if(priceText != null && !priceText.isEmpty()) {
-                    try {
-                        price = Integer.parseInt(priceText);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Ошибка парсинга цены: " + priceText);
-                        price = 0;
-                    }
-                } else {
-                    System.err.println("Цена отсутствует для обьявления: " + fullUrl);
-                }
-                //-- комнаты --
-                int rooms = 0;
-                java.util.regex.Matcher matcher = Pattern.compile("(\\d+)").matcher(title);
-                if(matcher.find()) {
-                    rooms = Integer.parseInt(matcher.group(1));
-                }
+        try {
+            System.out.println("🌐 Загружаем страницу: " + searchUrl);
 
-                // дата публикации
-                String dateText = ad.select("time[itemprop='datePublished']").attr("datetime");
-                LocalDateTime publishedAt = parseDate(dateText);
-                if(dateText != null && !dateText.isEmpty()) {
-                    try {
-                        publishedAt = LocalDateTime.parse(dateText,java.time.format.DateTimeFormatter.ISO_DATE_TIME);
-                    } catch (Exception ignored) {}
-                }
+            FetchResult result = seleniumFetcher.fetchPageSource(searchUrl);
+            String html = result.html();
 
-                // фильтр: только свежие
-                if (Duration.between(publishedAt, LocalDateTime.now()).compareTo(maxAge) <= 0) {
-                    FlatListing flat = new FlatListing(title, price, district, url, 0, publishedAt);
-                    listings.add(flat);
-                }
-
-            } catch (Exception e) {
-                System.err.println("Ошибка парсинга объявления: " + e.getMessage());
+            if (html == null || html.isEmpty()) {
+                System.out.println("⚠️ Пустая страница, парсинг пропущен");
+                return flats;
             }
+
+            Document doc = Jsoup.parse(html);
+
+            // Каждый блок объявления
+            Elements items = doc.select("div[data-marker='item']");
+
+            System.out.println("🔍 Найдено элементов: " + items.size());
+
+            for (Element item : items) {
+                FlatListing flat = new FlatListing();
+
+                // Заголовок
+                Element titleEl = item.selectFirst("h3[itemprop='name']");
+                if (titleEl != null) flat.setTitle(titleEl.text());
+
+                // Ссылка
+                Element linkEl = item.selectFirst("a[itemprop='url']");
+                if (linkEl != null) {
+                    String href = linkEl.attr("href");
+                    if (!href.startsWith("http")) href = "https://www.avito.ru" + href;
+                    flat.setUrl(href);
+                }
+
+                // Цена
+                Element priceEl = item.selectFirst("[data-marker='item-price']");
+                String price = (priceEl != null)
+                        ? priceEl.text().replaceAll("[^0-9]", "")
+                        : result.priceText(); // если Selenium нашёл цену
+                flat.setPrice(price);
+
+                // Адрес (район)
+                Element addressEl = item.selectFirst("[data-marker='item-address']");
+                if (addressEl != null) flat.setDistrict(addressEl.text());
+
+                // Кол-во комнат (из заголовка)
+                flat.setRooms(extractRooms(flat.getTitle()));
+
+                // Время публикации (пока приближённо)
+                flat.setPublishedAt(LocalDateTime.now());
+
+                flats.add(flat);
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Ошибка парсинга Avito: " + e.getMessage());
         }
 
-        return listings;
+        System.out.println("📦 Собрано объявлений: " + flats.size());
+        return flats;
     }
 
+    /**
+     * Примерное определение количества комнат из названия.
+     */
+    private String extractRooms(String title) {
+        if (title == null) return "?";
+        title = title.toLowerCase();
+        if (title.contains("1-ком")) return "1";
+        if (title.contains("2-ком")) return "2";
+        if (title.contains("3-ком")) return "3";
+        if (title.contains("4-ком")) return "4";
+        if (title.contains("5-ком")) return "5";
+        return "?";
+    }
 }

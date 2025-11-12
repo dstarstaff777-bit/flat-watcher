@@ -5,13 +5,16 @@ import java.time.format.DateTimeFormatter;
 
 public class FlatListing {
     private String title;
-    private int price;
+    private String price;
     private String district;
     private String url;
-    private int rooms;
+    private String rooms;
     private LocalDateTime publishedAt;
 
-    public FlatListing(String title, int price, String district, String url, int rooms, LocalDateTime publishedAt) {
+    public FlatListing() {
+    }
+
+    public FlatListing(String title, String price, String district, String url, String rooms, LocalDateTime publishedAt) {
         this.title = title;
         this.price = price;
         this.district = district;
@@ -32,14 +35,28 @@ public class FlatListing {
                 "🔗 <a href=\"" + url + "\">Открыть объявление</a>";
     }
 
-
-    // --- Геттеры и сеттеры ---
-    public String getTitle() {
-        return title;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public int getPrice() {
+    public String getPrice() {
         return price;
+    }
+
+    public void setPrice(String price) {
+        this.price = price;
+    }
+
+    public void setDistrict(String district) {
+        this.district = district;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getTitle() {
+        return title;
     }
 
     public String getDistrict() {
@@ -50,16 +67,16 @@ public class FlatListing {
         return url;
     }
 
-    public int getRooms() {
+    public String getRooms() {
         return rooms;
+    }
+
+    public void setRooms(String rooms) {
+        this.rooms = rooms;
     }
 
     public LocalDateTime getPublishedAt() {
         return publishedAt;
-    }
-
-    public void setRooms(int rooms) {
-        this.rooms = rooms;
     }
 
     public void setPublishedAt(LocalDateTime publishedAt) {

@@ -9,6 +9,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import parser.AvitoParser;
 import util.Config;
+import util.SeleniumFetcher;
+
 import java.time.Duration;
 import java.util.List;
 
@@ -20,15 +22,15 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     private final UserSearchCriteria criteria;
     private final TelegramNotifier notifier;
     private final AvitoParser parser;
+    SeleniumFetcher fetcher = new SeleniumFetcher();
 
     public FlatWatcherBot(String webhookUrl) {
         this.webhookUrl = webhookUrl;
         this.botToken = Config.getProperty("telegram.bot.token");
         this.botUsername = Config.getProperty("telegram.bot.username");
-
         this.criteria = new UserSearchCriteria();
         this.notifier = new TelegramNotifier();
-        this.parser = new AvitoParser();
+        this.parser = new AvitoParser(fetcher);
     }
 
     @Override
@@ -78,7 +80,7 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     private BotApiMethod<?> handleFind(long chatId) {
         notifier.sendMessage(chatId, "🔍 Ищу новые объявления за последний час...");
 
-        List<FlatListing> listings = parser.fetchListings(criteria.getBaseUrl(), Duration.ofMinutes(60));
+        List<FlatListing> listings = parser.fetch("https://www.avito.ru/uzlovaya/kvartiry/prodam?p=1");
 
         if (listings.isEmpty()) {
             notifier.sendMessage(chatId, "❌ Новых объявлений за последний час не найдено.");
