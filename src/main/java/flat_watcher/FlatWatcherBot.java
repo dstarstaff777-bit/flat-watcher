@@ -53,7 +53,11 @@ public class FlatWatcherBot extends TelegramWebhookBot {
      */
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
+
         if (update.hasMessage() && update.getMessage().hasText()) {
+            if (update.getMessage().getFrom().getIsBot()) {
+                return null; // Игнорируем собственные сообщения бота
+            }
             long chatId = update.getMessage().getChatId();
             String text = update.getMessage().getText().trim();
 
