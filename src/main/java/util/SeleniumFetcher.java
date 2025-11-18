@@ -15,14 +15,13 @@ import java.time.Duration;
 public class SeleniumFetcher {
     public FetchResult fetchPageSource(String url) {
         WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
 
+        ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--disable-gpu");
         options.addArguments("--disable-blink-features=AutomationControlled");
-        options.addArguments("--disable-geolocation");
 
         WebDriver driver = null;
 
@@ -30,19 +29,18 @@ public class SeleniumFetcher {
             driver = new ChromeDriver(options);
             driver.get(url);
 
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(40));
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
-            WebElement priceElement = wait.until(
-                    ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-marker='item-price']"))
-            );
+            // ❗ Ждём появления хотя бы одного блока объявления
+            wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.cssSelector("div[data-marker='item']")
+            ));
 
-            String priceText = priceElement.getText().trim();
-            System.out.println("💰 Цена найдена: " + priceText);
-
-            return new FetchResult(driver.getPageSource(), priceText);
+            System.out.println("✅ Страница загружена успешно");
+            return new FetchResult(driver.getPageSource(), null);
 
         } catch (TimeoutException e) {
-            System.out.println("⏳ Не удалось дождаться цены: " + url);
+            System.out.println("⏳ Не удалось дождаться загрузки страницы: " + url);
             return new FetchResult("", null);
 
         } catch (Exception e) {
