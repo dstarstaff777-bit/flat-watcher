@@ -106,8 +106,9 @@ public class AvitoParser {
                  * 5. Дата публикации (реальная, из карточки)
                  */
                 Element dateEl = item.selectFirst("div[data-marker='item-date']");
-                LocalDateTime publishedAt = parseDate(dateEl != null ? dateEl.text() : null);
-                flat.setPublishedAt(publishedAt);
+                if (dateEl != null) {
+                    flat.setPublishedAt(parseDate(dateEl.text()));
+                }
 
 
                 /*
@@ -128,37 +129,31 @@ public class AvitoParser {
     }
 
     private LocalDateTime parseDate(String text) {
-        if (text == null) return null;
-
-        text = text.trim();
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
-
         try {
-            if (text.contains("Только что")) return now.minusMinutes(1);
+            text = text.toLowerCase().trim();
 
             if (text.contains("минут")) {
-                int m = Integer.parseInt(text.replaceAll("\\D+", ""));
-                return now.minusMinutes(m);
+                int m = Integer.parseInt(text.replaceAll("[^0-9]", ""));
+                return LocalDateTime.now().minusMinutes(m);
             }
 
             if (text.contains("час")) {
-                int h = Integer.parseInt(text.replaceAll("\\D+", ""));
-                return now.minusHours(h);
+                int h = Integer.parseInt(text.replaceAll("[^0-9]", ""));
+                return LocalDateTime.now().minusHours(h);
             }
 
-            if (text.startsWith("Сегодня")) {
-                String time = text.replace("Сегодня", "").trim(); // "13:20"
-                return LocalDateTime.of(today, LocalTime.parse(time));
+            if (text.contains("сегодня")) {
+                String time = text.replace("сегодня", "").trim();
+                DateTimeFormatter f = DateTimeFormatter.ofPattern("H:mm");
+                return LocalDate.now().atTime(LocalTime.parse(time, f));
             }
 
-            // Формат
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d MMMM 'в' HH:mm", new Locale("ru"));
-            return LocalDateTime.parse(text, fmt);
+            // пример: "14 декабря, 11:53"
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM, HH:mm", new Locale("ru"));
+            return LocalDateTime.parse(text, formatter);
 
         } catch (Exception e) {
-            System.out.println("⚠️ Не удалось разобрать дату: " + text);
-            return now;
+            return LocalDateTime.now();
         }
     }
 

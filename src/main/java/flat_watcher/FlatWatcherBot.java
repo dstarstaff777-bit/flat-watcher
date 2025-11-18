@@ -7,6 +7,7 @@ import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import parser.AvitoParser;
 import util.Config;
 import util.SeleniumFetcher;
@@ -19,8 +20,6 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     private final String webhookUrl;
     private final String botToken;
     private final String botUsername;
-    private final UserSearchCriteria criteria;
-    private final TelegramNotifier notifier;
     private final AvitoParser parser;
     SeleniumFetcher fetcher = new SeleniumFetcher();
 
@@ -28,8 +27,6 @@ public class FlatWatcherBot extends TelegramWebhookBot {
         this.webhookUrl = webhookUrl;
         this.botToken = Config.getProperty("telegram.bot.token");
         this.botUsername = Config.getProperty("telegram.bot.username");
-        this.criteria = new UserSearchCriteria();
-        this.notifier = new TelegramNotifier();
         this.parser = new AvitoParser(fetcher);
     }
 
@@ -53,55 +50,79 @@ public class FlatWatcherBot extends TelegramWebhookBot {
      */
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        if (update.getMessage().getFrom().getIsBot()) {
-            return null; // Игнорируем собственные сообщения бота
-        }
-        if (update.hasMessage() && update.getMessage().hasText()) {
 
-            long chatId = update.getMessage().getChatId();
-            String text = update.getMessage().getText().trim();
-
-            switch (text) {
-                case "/start" -> {
-                    return send(chatId,
-                            "👋 Привет! Я отслеживаю новые объявления на Avito.\n" +
-                                    "Используй команду /find чтобы найти новые предложения за последний час.");
-                }
-                case "/find" -> {
-                    return handleFind(chatId);
-                }
-                default -> {
-                    return send(chatId, "Неизвестная команда.");
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Проверка новых объявлений за последний час
-     */
-    private BotApiMethod<?> handleFind(long chatId) {
-        notifier.sendMessage(chatId, "🔍 Ищу новые объявления за последний час...");
-
-        List<FlatListing> listings = parser.fetch("https://www.avito.ru/uzlovaya/kvartiry/prodam?p=1");
-
-        if (listings.isEmpty()) {
-            notifier.sendMessage(chatId, "❌ Новых объявлений за последний час не найдено.");
+        if (!update.hasMessage() || !update.getMessage().hasText()) {
             return null;
         }
 
-        notifier.sendMessage(chatId, "✅ Найдено объявлений: " + listings.size());
-
-        for (FlatListing flat : listings) {
-            notifier.sendMessage(chatId, flat.toTelegramMessage());
+        if (update.getMessage().getFrom().getIsBot()) {
+            return null; // не реагируем на собственные сообщения
         }
 
-        return null;
+        long chatId = update.getMessage().getChatId();
+        String text = update.getMessage().getText().trim();
+
+        System.out.println("📩 Команда: " + text);
+
+        return switch (text) {
+            case "/start" -> send(chatId,
+                    "👋 Привет!\n" +
+                            "Я отслеживаю новые объявления с Avito.\n" +
+                            "Используй команду /find чтобы получить новые объявления за последний час.");
+
+            case "/find" -> handleFind(chatId);
+
+            default -> send(chatId, "Неизвестная команда 😕");
+        };
     }
 
+    /**
+     * Обработчик команды /find
+     */
+    private BotApiMethod<?> handleFind(long chatId) {
+
+        // Первое сообщение — вернуть сразу
+        SendMessage searching = SendMessage.builder()
+                .chatId(chatId)
+                .text("🔍 Ищу новые объявления за последний час...")
+                .build();
+
+        // Но отправить его нужно "изнутри", потому что возвращать можно только одно
+        try {
+            execute(searching);
+        } catch (Exception ignored) {}
+
+        // Основной парсинг Avito
+        List<FlatListing> listings = parser.fetch(
+                "https://www.avito.ru/uzlovaya/kvartiry/prodam?p=1"
+        );
+
+        if (listings.isEmpty()) {
+            return send(chatId, "❌ Новых объявлений за последний час не найдено.");
+        }
+
+        // Сбор ответа в один большой текст
+        StringBuilder sb = new StringBuilder();
+        sb.append("✨ Найдено объявлений: ").append(listings.size()).append("\n\n");
+
+        for (FlatListing flat : listings) {
+            sb.append(flat.toTelegramMessage()).append("\n\n");
+        }
+
+        return SendMessage.builder()
+                .chatId(chatId)
+                .parseMode("HTML")
+                .text(sb.toString())
+                .build();
+    }
+
+    /**
+     * Вспомогательный метод отправки
+     */
     private SendMessage send(long chatId, String text) {
-        return SendMessage.builder().chatId(chatId).text(text).build();
+        return SendMessage.builder()
+                .chatId(chatId)
+                .text(text)
+                .build();
     }
 }
-
