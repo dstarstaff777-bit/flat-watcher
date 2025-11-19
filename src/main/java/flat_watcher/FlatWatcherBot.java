@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import parser.AvitoParser;
 import util.Config;
+import util.FlatFilter;
 import util.SeleniumFetcher;
 
 import java.time.Duration;
@@ -21,13 +22,15 @@ public class FlatWatcherBot extends TelegramWebhookBot {
     private final String botToken;
     private final String botUsername;
     private final AvitoParser parser;
+    private final TelegramNotifier notifier;
     SeleniumFetcher fetcher = new SeleniumFetcher();
 
-    public FlatWatcherBot(String webhookUrl) {
+    public FlatWatcherBot(String webhookUrl, TelegramNotifier notifier, AvitoParser parser) {
         this.webhookUrl = webhookUrl;
+        this.notifier = notifier;
         this.botToken = Config.getProperty("telegram.bot.token");
         this.botUsername = Config.getProperty("telegram.bot.username");
-        this.parser = new AvitoParser(fetcher);
+        this.parser = parser;
     }
 
     @Override
@@ -81,39 +84,24 @@ public class FlatWatcherBot extends TelegramWebhookBot {
      */
     private BotApiMethod<?> handleFind(long chatId) {
 
-        // Первое сообщение — вернуть сразу
-        SendMessage searching = SendMessage.builder()
-                .chatId(chatId)
-                .text("🔍 Ищу новые объявления за последний час...")
-                .build();
+        notifier.sendMessage(chatId, "🔍 Ищу новые объявления за последний час...");
 
-        // Но отправить его нужно "изнутри", потому что возвращать можно только одно
-        try {
-            execute(searching);
-        } catch (Exception ignored) {}
+        List<FlatListing> all = parser.fetch("https://www.avito.ru/uzlovaya/kvartiry/prodam?p=1");
 
-        // Основной парсинг Avito
-        List<FlatListing> listings = parser.fetch(
-                "https://www.avito.ru/uzlovaya/kvartiry/prodam?p=1"
-        );
+        List<FlatListing> fresh = FlatFilter.filterLastHour(all);
 
-        if (listings.isEmpty()) {
-            return send(chatId, "❌ Новых объявлений за последний час не найдено.");
+        if (fresh.isEmpty()) {
+            notifier.sendMessage(chatId, "❌ Новых объявлений за последний час не найдено.");
+            return null;
         }
 
-        // Сбор ответа в один большой текст
-        StringBuilder sb = new StringBuilder();
-        sb.append("✨ Найдено объявлений: ").append(listings.size()).append("\n\n");
+        notifier.sendMessage(chatId, "✅ Найдено новых объявлений: " + fresh.size());
 
-        for (FlatListing flat : listings) {
-            sb.append(flat.toTelegramMessage()).append("\n\n");
+        for (FlatListing f : fresh) {
+            notifier.sendMessage(chatId, f.toTelegramMessage());
         }
 
-        return SendMessage.builder()
-                .chatId(chatId)
-                .parseMode("HTML")
-                .text(sb.toString())
-                .build();
+        return null;
     }
 
     /**

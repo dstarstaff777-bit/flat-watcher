@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import flat_watcher.FlatWatcherBot;
+import notifer.TelegramNotifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import parser.AvitoParser;
+import util.SeleniumFetcher;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,20 +37,20 @@ public class Main {
             String webhookUrl = baseUrl + "/webhook";
             System.out.println("Webhook URL: " + webhookUrl);
 
+            TelegramNotifier notifier = new TelegramNotifier();
+
+            // Создаём парсер
+            AvitoParser parser = new AvitoParser(new SeleniumFetcher());
+
             // Создаём бота
-            FlatWatcherBot bot = new FlatWatcherBot(webhookUrl);
-            // Регистрируем его через API Telegram
-            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+            FlatWatcherBot bot = new FlatWatcherBot(webhookUrl, notifier, parser);
 
-            SetWebhook setWebhook = SetWebhook.builder()
-                    .url(webhookUrl)
-                    .build();
+            // Регистрируем
+            TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
+            api.registerBot(bot, SetWebhook.builder().url(webhookUrl).build());
 
-            botsApi.registerBot(bot, setWebhook);
-
-            // Запускаем веб-сервер на Render
+            // запускаем HTTP сервер
             startWebhookServer(bot);
-
             System.out.println("✅ Бот успешно запущен и webhook активен!");
 
         } catch (Exception e) {
