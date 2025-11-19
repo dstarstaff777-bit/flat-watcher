@@ -34,6 +34,7 @@ public class SeleniumFetcher {
             wait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.cssSelector("div[data-marker='item']")
             ));
+            //
             System.out.println("===== HTML START =====");
             System.out.println(driver.getPageSource());
             System.out.println("===== HTML END =====");
