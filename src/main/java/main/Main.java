@@ -1,100 +1,75 @@
 package main;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import flat_watcher.FlatWatcherBot;
-import notifer.TelegramNotifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
-
+import bot.MyWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import parser.AvitoParser;
-import util.SeleniumFetcher;
-
+import scheduler.ParserWorker;
+import com.sun.net.httpserver.HttpServer;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 
 
 public class Main {
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    public static void main(String[] args) throws Exception {
 
-    public static void main(String[] args) {
+        String token = System.getenv("BOT_TOKEN");
+        String username = System.getenv("BOT_USERNAME");
+        String webhookUrl = System.getenv("WEBHOOK_URL");   // например https://myapp.onrender.com/webhook
+        String webhookPath = "/webhook";
 
-        try {
-            System.out.println("Запуск бота...");
+        // 1. Создаем API
+        TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
 
-            String baseUrl = System.getenv("RENDER_EXTERNAL_URL");
-            if (baseUrl == null || baseUrl.isEmpty()) {
-                throw new RuntimeException("Ошибка: переменная среды RENDER_EXTERNAL_URL не установлена");
-            }
+        // 2. Бот
+        MyWebhookBot bot = new MyWebhookBot(token, username, webhookPath);
 
-            String webhookUrl = baseUrl + "/webhook";
-            System.out.println("Webhook URL: " + webhookUrl);
+        // 3. Регистрируем webhook
+        api.registerBot(bot, SetWebhook.builder().url(webhookUrl).build());
 
-            TelegramNotifier notifier = new TelegramNotifier();
+        // 4. Поднимаем HTTP сервер
+        startWebhookServer(bot, 8080, webhookPath);
 
-            // Создаём парсер
-            AvitoParser parser = new AvitoParser(new SeleniumFetcher());
+        // 5. Парсер
+        AvitoParser parser = new AvitoParser("https://www.avito.ru/moskva/kvartiry/prodam");
 
-            // Создаём бота
-            FlatWatcherBot bot = new FlatWatcherBot(webhookUrl, notifier, parser);
+        // 6. Scheduler
+        ParserWorker worker = new ParserWorker(parser, bot, 5);
+        worker.start();
 
-            // Регистрируем
-            TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
-            api.registerBot(bot, SetWebhook.builder().url(webhookUrl).build());
-
-            // запускаем HTTP сервер
-            startWebhookServer(bot);
-            System.out.println("✅ Бот успешно запущен и webhook активен!");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("SERVER STARTED");
     }
 
-    public static void startWebhookServer(FlatWatcherBot bot) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", 8080), 0);
+    private static void startWebhookServer(MyWebhookBot bot, int port, String path) throws IOException {
 
-        server.createContext("/webhook", (HttpExchange exchange) -> {
-            if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
-                exchange.sendResponseHeaders(200, 0);
-                exchange.close();
-                return;
-            }
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-            String json = new String(exchange.getRequestBody().readAllBytes());
-            System.out.println("📩 Update received: " + json);
-
+        server.createContext(path, exchange -> {
             try {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+
                 ObjectMapper mapper = new ObjectMapper();
-                var update = mapper.readValue(json, org.telegram.telegrambots.meta.api.objects.Update.class);
-                var response = bot.onWebhookUpdateReceived(update);
-                if (response != null) bot.execute(response);
+                Update update = mapper.readValue(body, Update.class);
 
-            } catch (Exception ex) {
-                ex.printStackTrace();
+                bot.onWebhookUpdateReceived(update);
+
+                String response = "OK";
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            exchange.sendResponseHeaders(200, 0);
-            exchange.close();
         });
 
         server.start();
-        System.out.println("🌍 HTTP Webhook server running on port 8080");
-        System.out.println("✅ Бот успешно запущен и webhook активен!");
-
-        synchronized (FlatWatcherBot.class) {
-            try {
-                FlatWatcherBot.class.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        System.out.println("[Webhook] Running on port " + port);
     }
 }
