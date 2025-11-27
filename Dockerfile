@@ -1,11 +1,10 @@
-# -------- STAGE 1: BUILD JAR --------
+
 FROM gradle:8.4-jdk21 AS builder
 WORKDIR /app
 COPY . .
-RUN gradle clean build shadowJar --no-daemon
+RUN ./gradle clean build shadowJar --no-daemon
 
 
-# -------- STAGE 2: RUNTIME --------
 FROM selenium/standalone-chrome:latest
 
 USER root
